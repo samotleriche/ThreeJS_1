@@ -1,18 +1,22 @@
-const isCodeSandbox = 'SANDBOX_URL' in process.env || 'CODESANDBOX_HOST' in process.env
+const isCodeSandbox =
+  "SANDBOX_URL" in process.env || "CODESANDBOX_HOST" in process.env;
+import { resolve } from "path";
 
 export default {
-    root: 'src/',
-    publicDir: '../static/',
-    base: './',
-    server:
-    {
-        host: true,
-        open: !isCodeSandbox // Open if it's not a CodeSandbox
+  root: "",
+  server: {
+    host: true,
+    open: !isCodeSandbox, // Open if it's not a CodeSandbox
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "./index.html"),
+        nested: resolve(__dirname, "./nested/index2.html"),
+      },
     },
-    build:
-    {
-        outDir: '../dist',
-        emptyOutDir: true,
-        sourcemap: true
-    }
-}
+    outDir: "../dist",
+    emptyOutDir: true,
+    sourcemap: true,
+  },
+};
