@@ -18,6 +18,7 @@ export default {
         nested: resolve(__dirname, "./nested/index2.html"),
         nested2: resolve(__dirname, "./nested2/index.html"),
         nested3: resolve(__dirname, "./nested3/index.html"),
+        nested4: resolve(__dirname, "./nested4/index.html"),
       },
     },
   },
