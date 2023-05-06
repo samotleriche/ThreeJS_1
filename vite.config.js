@@ -20,6 +20,7 @@ export default {
         nested3: resolve(__dirname, "./nested3/index.html"),
         nested4: resolve(__dirname, "./nested4/index.html"),
         nested5: resolve(__dirname, "./nested5/index.html"),
+        nested6: resolve(__dirname, "./nested6/index.html"),
       },
     },
   },
