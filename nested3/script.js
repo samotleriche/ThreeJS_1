@@ -85,7 +85,7 @@ gui
   .step(0.0001)
   .name("Roughness")
   .onChange(() => {
-    allMaterial.roughness = debugObject.moughness;
+    allMaterial.roughness = debugObject.roughness;
   });
 
 gui.add(debugObject, "reset");
