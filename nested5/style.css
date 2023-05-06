@@ -4,14 +4,10 @@
     padding: 0;
 }
 
-/* html,
+html,
 body
 {
     overflow: hidden;
-} */
-
-html {
-    background-color: #1e1a20;
 }
 
 .webgl
@@ -71,4 +67,3 @@ a:hover {
     transform: translateX(700px);
     justify-content: end;
 }
-
