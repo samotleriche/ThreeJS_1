@@ -1,3 +1,5 @@
+import glsl from "vite-plugin-glsl";
+
 const isCodeSandbox =
   "SANDBOX_URL" in process.env || "CODESANDBOX_HOST" in process.env;
 import { resolve } from "path";
@@ -21,7 +23,9 @@ export default {
         nested4: resolve(__dirname, "./nested4/index.html"),
         nested5: resolve(__dirname, "./nested5/index.html"),
         nested6: resolve(__dirname, "./nested6/index.html"),
+        Shaders: resolve(__dirname, "./shaders/index.html"),
       },
     },
   },
+  plugins: [glsl()],
 };
