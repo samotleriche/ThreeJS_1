@@ -24,6 +24,8 @@ const scene = new THREE.Scene();
  * Textures
  */
 const textureLoader = new THREE.TextureLoader();
+const flagTexture = textureLoader.load("../textures/usFlag.jpeg");
+const flag2Texture = textureLoader.load("../textures/flag-french.jpg");
 
 /**
  * Test mesh
@@ -41,7 +43,7 @@ for (let i = 0; i < count; i++) {
 geometry.setAttribute("aRandom", new THREE.BufferAttribute(randoms, 1));
 
 // Material
-const material = new THREE.RawShaderMaterial({
+const material = new THREE.ShaderMaterial({
   vertexShader: vertexShader,
   fragmentShader: fragmentShader,
   side: THREE.DoubleSide,
@@ -53,15 +55,21 @@ const material = new THREE.RawShaderMaterial({
 const mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
 
-const material2 = new THREE.RawShaderMaterial({
+const material2 = new THREE.ShaderMaterial({
   vertexShader: vertexShader2,
   fragmentShader: fragmentShader2,
   side: THREE.DoubleSide,
   wireframe: false,
   transparent: true,
+  uniforms: {
+    uFrequency: { value: new THREE.Vector2(10, 5) },
+    uTime: { value: 0 },
+    // uColor: { value: new THREE.Color("orange") },
+    uTexture: { value: flag2Texture },
+  },
 });
 
-const material3 = new THREE.RawShaderMaterial({
+const material3 = new THREE.ShaderMaterial({
   vertexShader: vertexShader3,
   fragmentShader: fragmentShader3,
   side: THREE.DoubleSide,
@@ -70,7 +78,8 @@ const material3 = new THREE.RawShaderMaterial({
   uniforms: {
     uFrequency: { value: new THREE.Vector2(10, 5) },
     uTime: { value: 0 },
-    // uColor: { value: new THREE.Color("orange") },
+    uColor: { value: new THREE.Color("orange") },
+    uTexture: { value: flagTexture },
   },
 });
 
@@ -87,6 +96,20 @@ gui
   .step(0.01)
   .name("frequencyY");
 
+gui
+  .add(material2.uniforms.uFrequency.value, "y")
+  .min(0)
+  .max(40)
+  .step(0.01)
+  .name("F frequencyY");
+
+gui
+  .add(material2.uniforms.uFrequency.value, "x")
+  .min(0)
+  .max(40)
+  .step(0.01)
+  .name("F frequencyX");
+
 // Mesh
 const mesh2 = new THREE.Mesh(geometry, material2);
 const mesh3 = new THREE.Mesh(geometry, material3);
@@ -94,8 +117,11 @@ const mesh3 = new THREE.Mesh(geometry, material3);
 // mesh2.position.z = -1;
 // rotate mesh
 // mesh2.rotation.x = Math.PI / 2;
-mesh2.position.set(1, 0, 0);
-mesh3.position.set(-1, 0, 0);
+mesh.position.set(0, 0, -0.1);
+mesh2.position.set(0, -1, 0);
+mesh2.scale.set(1.5, 1, 1);
+mesh3.scale.set(1.5, 1, 1);
+mesh3.position.set(0, 1, 0);
 
 scene.add(mesh2, mesh3);
 
@@ -131,7 +157,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.set(0, 0, 2.5);
+camera.position.set(0, -0.25, 2.5);
 scene.add(camera);
 
 // Controls
@@ -157,6 +183,7 @@ const tick = () => {
 
   // Update materials
   material3.uniforms.uTime.value = elapsedTime;
+  material2.uniforms.uTime.value = elapsedTime;
 
   // Update controls
   controls.update();
