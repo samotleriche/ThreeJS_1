@@ -1,3 +1,14 @@
+varying vec3 vDepthColor;
+varying vec3 vSurfaceColor;
+varying float vElevation;
+varying float vColorOffset;
+varying float vColorMultiplier;
+
 void main() {
-  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+
+  float mixStength = (vElevation + vColorOffset) * vColorMultiplier;
+
+  vec3 color = mix(vDepthColor, vSurfaceColor, mixStength);
+
+  gl_FragColor = vec4(color, 1.0);
 }
