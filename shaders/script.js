@@ -51,14 +51,14 @@ for (let i = 0; i < count; i++) {
 geometry.setAttribute("aRandom", new THREE.BufferAttribute(randoms, 1));
 
 // WATER GEO AND MATERIAL AND MESH
-const waterGeometry = new THREE.PlaneGeometry(2, 2, 512, 512);
+const waterGeometry = new THREE.PlaneGeometry(6, 4, 512, 512);
 const waterMaterial = new THREE.ShaderMaterial({
   vertexShader: waterVertexShader,
   fragmentShader: waterFragmentShader,
   side: THREE.DoubleSide,
   uniforms: {
     uBigWavesElevation: { value: 0.2 },
-    uBigWavesFrequency: { value: new THREE.Vector2(4, 1.5) },
+    uBigWavesFrequency: { value: new THREE.Vector2(1.4, 1.5) },
     uBigWaveSpeed: { value: 0.5 },
 
     uTime: { value: 0.0 },
@@ -319,7 +319,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.set(0, -0.25, 2.5);
+camera.position.set(0, -0.25, 4.5);
 scene.add(camera);
 
 // Controls
