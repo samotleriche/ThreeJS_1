@@ -2,6 +2,9 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "lil-gui";
 
+import fragmentShader from "../shaders/shaders/galaxy/fragment.glsl";
+import vertexShader from "../shaders/shaders/galaxy/vertex.glsl";
+
 /**
  * Base
  */
@@ -21,13 +24,13 @@ const scene = new THREE.Scene();
  * galaxy
  */
 const parameters = {
-  count: 50_000,
+  count: 90_000,
   size: 0.02,
-  radius: 5,
+  radius: 4,
   branches: 3,
-  spin: 1,
+  spin: 0.5,
   randomness: 0.2,
-  randomnessPower: 3,
+  randomnessPower: 5,
   insideColor: "#ff6030",
   outsideColor: "#4a7af2",
   spinSpeed: 0.05,
@@ -49,6 +52,8 @@ const generateGalaxy = () => {
   geometry = new THREE.BufferGeometry();
   const positions = new Float32Array(parameters.count * 3);
   const colors = new Float32Array(parameters.count * 3);
+  const scales = new Float32Array(parameters.count * 1);
+  const randomness = new Float32Array(parameters.count * 3);
 
   const colorInside = new THREE.Color(parameters.insideColor);
   const colorOutside = new THREE.Color(parameters.outsideColor);
@@ -63,6 +68,12 @@ const generateGalaxy = () => {
     const branchAngle =
       ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
 
+    positions[i3] = Math.cos(branchAngle + spinAngle) * radius;
+    positions[i3 + 1] = 0.0;
+    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius;
+
+    // Randomness
+
     const randomZ =
       Math.pow(Math.random(), parameters.randomnessPower) *
       (Math.random() < 0.5 ? 1 : -1);
@@ -73,17 +84,9 @@ const generateGalaxy = () => {
       Math.pow(Math.random(), parameters.randomnessPower) *
       (Math.random() < 0.5 ? 1 : -1);
 
-    // if (i < 10) {
-    //   console.log("angle: ", branchAngle);
-    // }
-
-    // positions[i3] = Math.cos(angle) * radius;
-    // positions[i3 + 1] = 0;
-    // positions[i3 + 2] = Math.sin(angle) * radius;
-
-    positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
-    positions[i3 + 1] = randomY;
-    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
+    randomness[i3] = randomX;
+    randomness[i3 + 1] = randomY;
+    randomness[i3 + 2] = randomZ;
 
     //color
     const mixedColor = colorInside.clone();
@@ -92,20 +95,39 @@ const generateGalaxy = () => {
     colors[i3] = mixedColor.r;
     colors[i3 + 1] = mixedColor.g;
     colors[i3 + 2] = mixedColor.b;
+
+    scales[i] = Math.random();
   }
 
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geometry.setAttribute("aScale", new THREE.BufferAttribute(scales, 1));
+  geometry.setAttribute(
+    "aRandomness",
+    new THREE.BufferAttribute(randomness, 3)
+  );
 
   /*
    * Material
    */
-  material = new THREE.PointsMaterial({
-    size: parameters.size,
-    sizeAttenuation: true,
+  // material = new THREE.PointsMaterial({
+  //   size: parameters.size,
+  //   sizeAttenuation: true,
+  //   depthWrite: false,
+  //   blending: THREE.AdditiveBlending,
+  //   vertexColors: true,
+  // });
+
+  material = new THREE.ShaderMaterial({
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     vertexColors: true,
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    uniforms: {
+      uSize: { value: 10 * renderer.getPixelRatio() },
+      uTime: { value: 0 },
+    },
   });
 
   // Points
@@ -114,8 +136,6 @@ const generateGalaxy = () => {
 
   // console.log(positions);
 };
-
-generateGalaxy();
 
 gui
   .add(parameters, "count")
@@ -243,7 +263,10 @@ const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
   // rotate the galaxy
-  points.rotation.y = elapsedTime * parameters.spinSpeed;
+  // points.rotation.y = elapsedTime * parameters.spinSpeed;
+
+  // Update Material
+  material.uniforms.uTime.value = elapsedTime;
 
   // Update controls
   controls.update();
@@ -254,5 +277,7 @@ const tick = () => {
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
 };
+
+generateGalaxy();
 
 tick();
