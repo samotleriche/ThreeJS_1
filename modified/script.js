@@ -245,11 +245,14 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.set(4, 1, -4);
+
+camera.position.set(9, 1, -9);
 scene.add(camera);
 
 // Controls
 const controls = new OrbitControls(camera, canvas);
+controls.maxDistance = 15;
+controls.minDistance = 3;
 controls.enableDamping = true;
 
 /**

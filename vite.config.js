@@ -25,6 +25,7 @@ export default {
         nested6: resolve(__dirname, "./nested6/index.html"),
         shaders: resolve(__dirname, "./shaders/index.html"),
         modified: resolve(__dirname, "./modified/index.html"),
+        postprocess: resolve(__dirname, "./postprocess/index.html"),
       },
     },
   },
