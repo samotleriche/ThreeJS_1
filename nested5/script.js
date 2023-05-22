@@ -3,6 +3,14 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "lil-gui";
 // import gltf loader
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import Stats from "stats.js";
+
+// Stats
+const stats = new Stats();
+stats.showPanel(0);
+stats.domElement.style.bottom = "0px";
+stats.domElement.style.top = "auto";
+document.body.appendChild(stats.dom);
 
 /**
  * Base
@@ -179,6 +187,8 @@ let currentTime = 0;
 let currentIntersect = null;
 
 const tick = () => {
+  // Stats
+  stats.begin();
   const elapsedTime = clock.getElapsedTime();
   // get time delta
   const deltaTime = elapsedTime - currentTime;
@@ -257,6 +267,9 @@ const tick = () => {
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
+
+  // Stats
+  stats.end();
 };
 
 tick();

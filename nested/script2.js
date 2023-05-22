@@ -4,6 +4,14 @@ import * as dat from "lil-gui";
 
 import fragmentShader from "../shaders/shaders/galaxy/fragment.glsl";
 import vertexShader from "../shaders/shaders/galaxy/vertex.glsl";
+import Stats from "stats.js";
+
+// Stats
+const stats = new Stats();
+stats.showPanel(0);
+stats.domElement.style.bottom = "0px";
+stats.domElement.style.top = "auto";
+document.body.appendChild(stats.dom);
 
 /**
  * Base
@@ -260,6 +268,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const clock = new THREE.Clock();
 
 const tick = () => {
+  // Stats
+  stats.begin();
   const elapsedTime = clock.getElapsedTime();
 
   // rotate the galaxy
@@ -276,6 +286,9 @@ const tick = () => {
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
+
+  // Stats
+  stats.end();
 };
 
 generateGalaxy();

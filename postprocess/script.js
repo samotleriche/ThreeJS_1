@@ -11,12 +11,20 @@ import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as dat from "lil-gui";
+import Stats from "stats.js";
 
 /**
  * Base
  */
 // Debug
 const gui = new dat.GUI();
+
+// Stats
+const stats = new Stats();
+stats.showPanel(0);
+stats.domElement.style.bottom = "0px";
+stats.domElement.style.top = "auto";
+document.body.appendChild(stats.dom);
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
@@ -198,32 +206,114 @@ const TintShader = {
     uTint: { value: null },
   },
   vertexShader: `
+  varying vec2 vUv;
 
-    varying vec2 vUv;
+  uniform vec3 uTint;
 
+  varying vec3 vTint;
     void main() {
-
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       vUv = uv;
-
-      gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-
+      vTint = uTint;
     }
   `,
   fragmentShader: `
+    varying vec2 vUv;
+    varying vec3 vTint;
     uniform sampler2D tDiffuse;
-    uniform vec3 uTint;
+    void main() {
+      vec4 color = texture2D(tDiffuse, vUv);
+      
+      color.rgb += vTint;
+      gl_FragColor = vec4(color);
+    }
+  `,
+};
+
+const tintPass = new ShaderPass(TintShader);
+tintPass.uniforms.uTint.value = new THREE.Vector3(0.2, 0.0, 0.0);
+tintPass.enabled = false;
+effectComposer.addPass(tintPass);
+
+// Displacement Pass
+const DisplacementShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uTime: { value: null },
+  },
+  vertexShader: `
+  varying vec2 vUv;
+  uniform float uTime;
+
+  varying float vTime;
+
+    void main() {
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      vUv = uv;
+      vTime = uTime;
+    }
+  `,
+  fragmentShader: `
+    varying vec2 vUv;
+    varying float vTime;
+    uniform sampler2D tDiffuse;
+    void main() {
+      vec2 newUv = vec2(vUv.x, vUv.y + sin(vUv.x * 10.0 + vTime) * 0.05);
+      
+      vec4 color = texture2D(tDiffuse, newUv);
+      
+      gl_FragColor = vec4(color);
+    }
+  `,
+};
+
+const displacementPass = new ShaderPass(DisplacementShader);
+displacementPass.uniforms.uTime.value = 0;
+displacementPass.enabled = false;
+effectComposer.addPass(displacementPass);
+
+// Displacement Pass
+const DisplacementShader2 = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uNormalMap: { value: null },
+  },
+  vertexShader: `
+  varying vec2 vUv;
+
+    void main() {
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      vUv = uv;
+    }
+  `,
+  fragmentShader: `
+    
+    uniform sampler2D uNormalMap;
+    uniform sampler2D tDiffuse;
 
     varying vec2 vUv;
 
     void main() {
+      vec3 normalColor = texture2D(uNormalMap, vUv).xyz * 2.0 - 1.0;
 
-      vec4 color = texture2D( tDiffuse, vUv );
-      color.rgb += uTint;
+      vec2 newUv = vUv + normalColor.xy * 0.1;
+      vec4 color = texture2D(tDiffuse, newUv);
+
+      vec3 lightDirection = normalize(vec3(-1.0, 1.0, 0.0));
+      float lightness = clamp(dot(normalColor, lightDirection), 0.0, 1.0);
+      color.rgb += lightness * 2.0; 
+      
       gl_FragColor = color;
-
     }
   `,
 };
+
+const displacementPass2 = new ShaderPass(DisplacementShader2);
+displacementPass2.uniforms.uNormalMap.value = textureLoader.load(
+  "../textures/interfaceNormalMap.png"
+);
+displacementPass2.enabled = false;
+effectComposer.addPass(displacementPass2);
 
 gui.add(dotScreenPass, "enabled").name("Dot Screen Pass");
 gui.add(glitchPass, "enabled").name("Glitch Pass");
@@ -249,13 +339,42 @@ gui
   .step(0.001)
   .name("Bloom Threshold");
 
+gui.add(tintPass, "enabled").name("Custom Tint Pass");
+gui
+  .add(tintPass.uniforms.uTint.value, "x")
+  .min(-1)
+  .max(1)
+  .step(0.001)
+  .name("Red");
+gui
+  .add(tintPass.uniforms.uTint.value, "y")
+  .min(-1)
+  .max(1)
+  .step(0.001)
+  .name("Green");
+gui
+  .add(tintPass.uniforms.uTint.value, "z")
+  .min(-1)
+  .max(1)
+  .step(0.001)
+  .name("Blue");
+
+gui.add(displacementPass, "enabled").name("Custom Displacement Pass");
+
+gui.add(displacementPass2, "enabled").name("Custom Displacement Pass 2");
 /**
  * Animate
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
+  // Stats
+  stats.begin();
+
   const elapsedTime = clock.getElapsedTime();
+
+  // Update passes
+  displacementPass.uniforms.uTime.value = elapsedTime;
 
   // Update controls
   controls.update();
@@ -268,6 +387,9 @@ const tick = () => {
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
+
+  // Stats
+  stats.end();
 };
 
 tick();

@@ -1,6 +1,14 @@
 import * as THREE from "three";
 import * as dat from "lil-gui";
 import gsap from "gsap";
+import Stats from "stats.js";
+
+// Stats
+const stats = new Stats();
+stats.showPanel(0);
+stats.domElement.style.bottom = "0px";
+stats.domElement.style.top = "auto";
+document.body.appendChild(stats.dom);
 
 /**
  * Base
@@ -328,6 +336,8 @@ const clock = new THREE.Clock();
 let previousTime = 0;
 
 const tick = () => {
+  // Stats
+  stats.begin();
   const elapsedTime = clock.getElapsedTime();
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
@@ -351,6 +361,7 @@ const tick = () => {
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
+  stats.end();
 };
 
 tick();

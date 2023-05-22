@@ -11,6 +11,14 @@ import fragmentShader3 from "./shaders/frag3.glsl";
 import fragmentShader4 from "./shaders/fragment4.glsl";
 import waterVertexShader from "./shaders/waterVertex.glsl";
 import waterFragmentShader from "./shaders/waterFragment.glsl";
+import Stats from "stats.js";
+
+// Stats
+const stats = new Stats();
+stats.showPanel(0);
+stats.domElement.style.bottom = "0px";
+stats.domElement.style.top = "auto";
+document.body.appendChild(stats.dom);
 
 /**
  * Base
@@ -341,6 +349,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const clock = new THREE.Clock();
 
 const tick = () => {
+  stats.begin();
   const elapsedTime = clock.getElapsedTime();
 
   // Update materials
@@ -358,6 +367,7 @@ const tick = () => {
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
+  stats.end();
 };
 
 tick();

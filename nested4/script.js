@@ -5,6 +5,14 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
 import * as dat from "lil-gui";
+import Stats from "stats.js";
+
+// Stats
+const stats = new Stats();
+stats.showPanel(0);
+stats.domElement.style.bottom = "0px";
+stats.domElement.style.top = "auto";
+document.body.appendChild(stats.dom);
 
 /**
  * Base
@@ -21,6 +29,23 @@ const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
+
+// overlay
+const overlayGeometry = new THREE.PlaneGeometry(2, 2, 1, 1);
+const overlayMaterial = new THREE.ShaderMaterial({
+  vertexShader: `
+    void main() {
+      gl_Position =  vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    void main() {
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+  `,
+});
+const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
+scene.add(overlay);
 
 // updateAllMaterials
 const updateAllMaterials = () => {
@@ -315,6 +340,7 @@ const clock = new THREE.Clock();
 let previousTime = 0;
 
 const tick = () => {
+  stats.begin();
   const elapsedTime = clock.getElapsedTime();
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
@@ -330,6 +356,7 @@ const tick = () => {
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
+  stats.end();
 };
 
 tick();
