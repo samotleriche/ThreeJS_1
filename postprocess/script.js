@@ -12,6 +12,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as dat from "lil-gui";
 import Stats from "stats.js";
+import gsap from "gsap";
 
 /**
  * Base
@@ -26,18 +27,57 @@ stats.domElement.style.bottom = "0px";
 stats.domElement.style.top = "auto";
 document.body.appendChild(stats.dom);
 
+let sceneReady = false;
+
+let loadingBar = document.body.querySelector(".loading-bar");
+let loadingText = document.body.querySelector(".loading-text");
+let loadingText1 = document.body.querySelector(".loading-text1");
+
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
 
+const loadingManager = new THREE.LoadingManager(
+  // Loaded
+  () => {
+    gsap.delayedCall(0.5, () => {
+      gsap.to(overlayMaterial.uniforms.uAlpha, {
+        duration: 3,
+        value: 0,
+        delay: 1,
+      });
+    });
+
+    // wait 1 sec
+    window.setTimeout(() => {
+      loadingBar.classList.add("ended");
+      loadingText.classList.add("ended");
+      loadingText1.classList.add("ended");
+      loadingBar.style.transform = "";
+    }, 1500);
+
+    window.setTimeout(() => {
+      sceneReady = true;
+    }, 3000);
+  },
+
+  // Progress
+  (itemUrl, itemsLoaded, itemsTotal) => {
+    loadingBar.style.transform = `scaleX(${itemsLoaded / itemsTotal})`;
+    loadingText.innerHTML = `${Math.floor((itemsLoaded / itemsTotal) * 100)}%`;
+
+    // console.log(itemsLoaded / itemsTotal);
+  }
+);
+
 /**
  * Loaders
  */
-const gltfLoader = new GLTFLoader();
-const cubeTextureLoader = new THREE.CubeTextureLoader();
-const textureLoader = new THREE.TextureLoader();
+const gltfLoader = new GLTFLoader(loadingManager);
+const cubeTextureLoader = new THREE.CubeTextureLoader(loadingManager);
+const textureLoader = new THREE.TextureLoader(loadingManager);
 
 /**
  * Update all materials
@@ -55,6 +95,29 @@ const updateAllMaterials = () => {
     }
   });
 };
+
+// overlay
+const overlayGeometry = new THREE.PlaneGeometry(2, 2, 1, 1);
+const overlayMaterial = new THREE.ShaderMaterial({
+  transparent: true,
+  uniforms: {
+    uAlpha: { value: 1.0 },
+  },
+  vertexShader: `
+    void main() {
+      gl_Position =  vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform float uAlpha;
+
+    void main() {
+      gl_FragColor = vec4(0.0, 0.0, 0.0, uAlpha);
+    }
+  `,
+});
+const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
+scene.add(overlay);
 
 /**
  * Environment map
@@ -82,6 +145,23 @@ gltfLoader.load("/models/DamagedHelmet/glTF/DamagedHelmet.gltf", (gltf) => {
 
   updateAllMaterials();
 });
+
+// Points of Interest
+const raycaster = new THREE.Raycaster();
+const points = [
+  {
+    position: new THREE.Vector3(1.45, 0.27, -0.2),
+    element: document.querySelector(".point-0"),
+  },
+  {
+    position: new THREE.Vector3(-0.5, 0.6, -1.9),
+    element: document.querySelector(".point-1"),
+  },
+  {
+    position: new THREE.Vector3(-0.5, 0.6, 2.1),
+    element: document.querySelector(".point-2"),
+  },
+];
 
 /**
  * Lights
@@ -378,6 +458,35 @@ const tick = () => {
 
   // Update controls
   controls.update();
+
+  // loop points to update
+  if (sceneReady) {
+    for (const point of points) {
+      const screenPosition = point.position.clone();
+      screenPosition.project(camera);
+
+      // raycaster
+      raycaster.setFromCamera(screenPosition, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+
+      if (intersects.length === 0) {
+        point.element.classList.add("visible");
+      } else {
+        const intersectionDistance = intersects[0].distance;
+        const pointDistance = point.position.distanceTo(camera.position);
+
+        if (intersectionDistance < pointDistance) {
+          point.element.classList.remove("visible");
+        } else {
+          point.element.classList.add("visible");
+        }
+      }
+
+      const translateX = screenPosition.x * sizes.width * 0.5;
+      const translateY = -screenPosition.y * sizes.height * 0.5;
+      point.element.style.transform = `translate(${translateX}px, ${translateY}px)`;
+    }
+  }
 
   // Render
   // renderer.render(scene, camera);
