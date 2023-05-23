@@ -3,6 +3,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 // import draco loader
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import gsap from "gsap";
 
 import * as dat from "lil-gui";
 import Stats from "stats.js";
@@ -13,6 +14,10 @@ stats.showPanel(0);
 stats.domElement.style.bottom = "0px";
 stats.domElement.style.top = "auto";
 document.body.appendChild(stats.dom);
+
+let loadingBar = document.body.querySelector(".loading-bar");
+let loadingText = document.body.querySelector(".loading-text");
+let loadingText1 = document.body.querySelector(".loading-text1");
 
 /**
  * Base
@@ -33,14 +38,20 @@ const scene = new THREE.Scene();
 // overlay
 const overlayGeometry = new THREE.PlaneGeometry(2, 2, 1, 1);
 const overlayMaterial = new THREE.ShaderMaterial({
+  transparent: true,
+  uniforms: {
+    uAlpha: { value: 1.0 },
+  },
   vertexShader: `
     void main() {
       gl_Position =  vec4(position, 1.0);
     }
   `,
   fragmentShader: `
+    uniform float uAlpha;
+
     void main() {
-      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+      gl_FragColor = vec4(0.0, 0.0, 0.0, uAlpha);
     }
   `,
 });
@@ -67,15 +78,44 @@ gui
   .step(0.001)
   .onChange(updateAllMaterials);
 
+const loadingManager = new THREE.LoadingManager(
+  // Loaded
+  () => {
+    gsap.delayedCall(0.5, () => {
+      gsap.to(overlayMaterial.uniforms.uAlpha, {
+        duration: 3,
+        value: 0,
+        delay: 1,
+      });
+    });
+
+    // wait 1 sec
+    window.setTimeout(() => {
+      loadingBar.classList.add("ended");
+      loadingText.classList.add("ended");
+      loadingText1.classList.add("ended");
+      loadingBar.style.transform = "";
+    }, 1500);
+  },
+
+  // Progress
+  (itemUrl, itemsLoaded, itemsTotal) => {
+    loadingBar.style.transform = `scaleX(${itemsLoaded / itemsTotal})`;
+    loadingText.innerHTML = `${Math.floor((itemsLoaded / itemsTotal) * 100)}%`;
+
+    // console.log(itemsLoaded / itemsTotal);
+  }
+);
+
 // Draco loader
-const dracoLoader = new DRACOLoader();
+const dracoLoader = new DRACOLoader(loadingManager);
 dracoLoader.setDecoderPath("../draco/");
 
-const gltfLoader = new GLTFLoader();
+const gltfLoader = new GLTFLoader(loadingManager);
 gltfLoader.setDRACOLoader(dracoLoader);
 
 // cube texture loader
-const cubeTextureLoader = new THREE.CubeTextureLoader();
+const cubeTextureLoader = new THREE.CubeTextureLoader(loadingManager);
 const environmentMapTexture = cubeTextureLoader.load([
   "../textures/environmentMaps/0/px.jpg",
   "../textures/environmentMaps/0/nx.jpg",
